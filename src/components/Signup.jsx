@@ -134,10 +134,17 @@ const SignUp = () => {
               Sign Up
             </Button>
             <Grid container justifyContent="flex-end">
-              <Grid item>
+              <Grid item xs={12}>
                 <Link href="/login" variant="body2">
                   Already have an account? Sign in
                 </Link>
+              </Grid>
+              <Grid item xs={12}>
+                <Link href="/" variant="body2">
+                  Go back to home
+                </Link>
+              </Grid>
+              <Grid item xs={12}>
                 {alert != null ? (
                   <Alert
                     onClose={() => {
