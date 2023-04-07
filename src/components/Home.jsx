@@ -18,6 +18,11 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import { Button, CardActionArea, CardActions } from '@mui/material';
 import { Link } from 'react-router-dom';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogTitle from '@mui/material/DialogTitle';
 import axios from '../services/axios';
 import decodeJWT from '../services/decodeJWT';
 import NavBar from './NavBar';
@@ -25,6 +30,7 @@ import NavBar from './NavBar';
 const CAT_URL = '/categories';
 const CUSTOMERS_URL = '/customers/';
 const PRODUCTS_URL = '/products';
+const token = window.localStorage.getItem('token');
 
 const drawerWidth = 240;
 
@@ -57,6 +63,8 @@ const Home = () => {
   const [cats, setCats] = React.useState(null);
   const [customer, setCustomer] = React.useState(null);
   const [selectedCat, setSelectedCat] = React.useState();
+  const [openDialog, setOpenDialog] = React.useState(false);
+  const [itemToDelete, setItemToDelete] = React.useState(false);
 
   const DrawerHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -88,18 +96,13 @@ const Home = () => {
   }, []);
 
   React.useEffect(() => {
-    axios
-      .get(CAT_URL)
-      .then((response) => {
-        setCats(response.data);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+    axios.get(CAT_URL).then((response) => {
+      setCats(response.data);
+    });
   }, []);
 
   React.useEffect(() => {
-    if (session === true) {
+    if (session && role === 'customer') {
       const userId = decodeJWT(window.localStorage.getItem('token')).sub;
       axios
         .get(CUSTOMERS_URL + userId)
@@ -110,13 +113,37 @@ const Home = () => {
           console.log(error);
         });
     }
-  }, [session]);
+  }, []);
 
   React.useEffect(() => {
     axios.get(PRODUCTS_URL).then((response) => {
       setProducts(response.data);
     });
-  }, []);
+  }, [products]);
+
+  const handleClickOpenDialog = (id) => {
+    setOpenDialog(true);
+    setItemToDelete(id);
+  };
+
+  const handleClickCloseDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const handleDeleteProduct = (id) => {
+    axios
+      .delete(`${PRODUCTS_URL}/${id}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((response) => response.json);
+    setOpenDialog(false);
+    axios.get(PRODUCTS_URL).then((response) => {
+      setProducts(response.data);
+    });
+  };
 
   const handleSetCat = (id) => {
     if (selectedCat !== null) {
@@ -190,6 +217,13 @@ const Home = () => {
         ) : (
           ''
         )}
+        {session && role === 'admin' ? (
+          <DrawerHeader>
+            <Typography variant="h6">ADMIN ROLE ACTIVE</Typography>
+          </DrawerHeader>
+        ) : (
+          ''
+        )}
         <Divider />
         <Div>Categories</Div>
         <Divider />
@@ -209,7 +243,7 @@ const Home = () => {
             ))
             : ''}
         </List>
-        {role !== null && role === 'admin' ? (
+        {session && role === 'admin' ? (
           <List>
             <Div>Admin Tools</Div>
 
@@ -259,9 +293,23 @@ const Home = () => {
                     </CardContent>
                   </CardActionArea>
                   <CardActions>
-                    <Button size="small" color="primary">
-                      Add to car
-                    </Button>
+                    {session && role === 'admin' ? (
+                      <>
+                        <IconButton
+                          aria-label="delete"
+                          onClick={() => handleClickOpenDialog(item.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                        <IconButton aria-label="delete">
+                          <EditIcon />
+                        </IconButton>
+                      </>
+                    ) : (
+                      <Button size="small" color="primary">
+                        Add to car
+                      </Button>
+                    )}
                   </CardActions>
                 </Card>
               </Grid>
@@ -277,6 +325,30 @@ const Home = () => {
           )}
         </Grid>
       </Main>
+      <Dialog
+        open={openDialog}
+        onClose={handleClickCloseDialog}
+        aria-labelledby="alert-dialog-title"
+      >
+        <DialogTitle id="alert-dialog-title">
+          Are you sure of deleting this product?
+        </DialogTitle>
+        <DialogActions>
+          <Button color="primary" onClick={handleClickCloseDialog}>
+            No, cancel
+          </Button>
+          <Button
+            color="error"
+            onClick={() => {
+              handleDeleteProduct(itemToDelete);
+              handleClickCloseDialog();
+            }}
+            autoFocus
+          >
+            Delete this Product
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

@@ -6,51 +6,45 @@ import TextField from '@mui/material/TextField';
 import Link from '@mui/material/Link';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import Typography from '@mui/material/Typography';
+import DataSaverOnOutlinedIcon from '@mui/icons-material/DataSaverOnOutlined';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import Typography from '@mui/material/Typography';
 import axios from '../services/axios';
 
 const theme = createTheme();
-const LOGIN_URL = '/auth/login';
+const CAT_URL = '/categories';
 
 const Login = () => {
   const [alert, setAlert] = useState();
   const [success, setSuccess] = useState();
   const navigate = useNavigate();
 
+  const token = window.localStorage.getItem('token');
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const credentials = {
-      email: data.get('email'),
-      password: data.get('password'),
-    };
     try {
       await axios
-        .post(LOGIN_URL, JSON.stringify(credentials), {
-          headers: { 'Content-Type': 'application/json' },
+        .post(CAT_URL, JSON.stringify({ name: data.get('name') }), {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
         })
         .then((response) => {
-          if (response.status === 200) {
-            localStorage.setItem('token', response.data.token);
-            setSuccess('You are now logged in! Add some items to your car');
+          if (response.status === 201) {
+            setSuccess('Category was created succesfully');
             setTimeout(() => {
-              navigate('/', { replace: true });
+              navigate('/');
             }, 3000);
           }
         });
     } catch (error) {
-      // if (error.response.status === 400) {
-      //   setAlert('Fill all the fields');
-      // }
-      // else {
       setAlert(error.response.data.message);
-      console.log(error.response.data.message);
-      // }
     }
     return null;
   };
@@ -68,10 +62,10 @@ const Login = () => {
           }}
         >
           <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-            <LockOutlinedIcon />
+            <DataSaverOnOutlinedIcon />
           </Avatar>
           <Typography component="h1" variant="h5">
-            Log in
+            Create a new Category
           </Typography>
           <Box
             component="form"
@@ -83,21 +77,10 @@ const Login = () => {
               margin="normal"
               required
               fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
+              id="name"
+              label="Category Name"
+              name="name"
               autoFocus
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type="password"
-              id="password"
-              autoComplete="current-password"
             />
             <Button
               type="submit"
@@ -105,14 +88,9 @@ const Login = () => {
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
-              Sign In
+              CREATE
             </Button>
             <Grid container>
-              <Grid item xs={12}>
-                <Link href="/signup" variant="body2">
-                  Don&apos;t have an account? Sign Up
-                </Link>
-              </Grid>
               <Grid item xs={12}>
                 <Link href="/" variant="body2">
                   Go back to home
