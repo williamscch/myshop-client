@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import MuiAppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
@@ -19,6 +19,7 @@ const NavBar = ({
   open, handleDrawerOpen, drawerWidth, session, setSession,
 }) => {
   const [openDialog, setOpenDialog] = React.useState(false);
+  const navigate = useNavigate();
 
   const AppBar = styled(MuiAppBar, {
     shouldForwardProp: (prop) => prop !== 'open',
@@ -40,6 +41,9 @@ const NavBar = ({
   const handleLogOutClick = () => {
     window.localStorage.removeItem('token');
     setSession(false);
+    setTimeout(() => {
+      navigate('/login');
+    }, 3000);
   };
 
   const handleClickOpenDialog = () => {

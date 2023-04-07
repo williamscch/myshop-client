@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-bind */
 import * as React from 'react';
 import { styled, useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -23,6 +24,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogTitle from '@mui/material/DialogTitle';
+import TextField from '@mui/material/TextField';
 import axios from '../services/axios';
 import decodeJWT from '../services/decodeJWT';
 import NavBar from './NavBar';
@@ -62,9 +64,12 @@ const Home = () => {
   const theme = useTheme();
   const [cats, setCats] = React.useState(null);
   const [customer, setCustomer] = React.useState(null);
-  const [selectedCat, setSelectedCat] = React.useState();
   const [openDialog, setOpenDialog] = React.useState(false);
   const [itemToDelete, setItemToDelete] = React.useState(false);
+  const [categoryId, setCategoryId] = React.useState(null);
+  const [minPrice, setMinPrice] = React.useState('');
+  const [maxPrice, setMaxPrice] = React.useState('');
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   const DrawerHeader = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -80,6 +85,39 @@ const Home = () => {
     backgroundColor: theme.palette.primary.light,
     padding: theme.spacing(1),
   }));
+
+  React.useEffect(() => {
+    const filters = {};
+
+    if (categoryId !== null) {
+      filters.categoryId = categoryId;
+    }
+    if (minPrice !== '') {
+      filters.price_min = minPrice;
+    }
+    if (maxPrice !== '') {
+      filters.price_max = maxPrice;
+    }
+    if (searchQuery !== '') {
+      filters.name = searchQuery;
+    }
+    const queryString = Object.keys(filters)
+      .map(
+        (key) => `${encodeURIComponent(key)}=${encodeURIComponent(filters[key])}`,
+      )
+      .join('&');
+
+    const url = queryString ? `${PRODUCTS_URL}?${queryString}` : PRODUCTS_URL;
+
+    axios
+      .get(url)
+      .then((response) => {
+        setProducts(response.data);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }, [categoryId, minPrice, maxPrice, searchQuery]);
 
   React.useEffect(() => {
     if (localStorage.getItem('token') !== null) {
@@ -119,7 +157,7 @@ const Home = () => {
     axios.get(PRODUCTS_URL).then((response) => {
       setProducts(response.data);
     });
-  }, [products]);
+  }, []);
 
   const handleClickOpenDialog = (id) => {
     setOpenDialog(true);
@@ -138,23 +176,14 @@ const Home = () => {
           Authorization: `Bearer ${token}`,
         },
       })
-      .then((response) => response.json);
-    setOpenDialog(false);
-    axios.get(PRODUCTS_URL).then((response) => {
-      setProducts(response.data);
-    });
-  };
-
-  const handleSetCat = (id) => {
-    if (selectedCat !== null) {
-      setProducts(null);
-      setSelectedCat(id);
-      axios.get(`categories/${id}`).then((response) => {
-        if (response.status === 200) {
-          setProducts(response.data.products);
+      .then((response) => {
+        if (response.status === 201) {
+          setOpenDialog(false);
+          axios.get(PRODUCTS_URL).then((response) => {
+            setProducts(response.data);
+          });
         }
       });
-    }
   };
 
   const handleSetAllCat = () => {
@@ -170,6 +199,22 @@ const Home = () => {
   const handleDrawerClose = () => {
     setOpen(false);
   };
+
+  function handleCategoryChange(id) {
+    setCategoryId(id);
+  }
+
+  function handleMinPriceChange(event) {
+    setMinPrice(event.target.value);
+  }
+
+  function handleMaxPriceChange(event) {
+    setMaxPrice(event.target.value);
+  }
+
+  function handleSearchQueryChange(event) {
+    setSearchQuery(event.target.value);
+  }
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -236,13 +281,57 @@ const Home = () => {
           {cats !== null
             ? cats.map((item) => (
               <ListItem key={item.id} disablePadding>
-                <ListItemButton onClick={() => handleSetCat(item.id)}>
+                <ListItemButton onClick={() => handleCategoryChange(item.id)}>
                   <ListItemText primary={item.name} />
                 </ListItemButton>
               </ListItem>
             ))
             : ''}
         </List>
+        <Box component="form" noValidate sx={{ mt: 1 }}>
+          <TextField
+            type="number"
+            id="minPrice"
+            name="minPrice"
+            margin="normal"
+            fullWidth
+            value={minPrice}
+            onChange={handleMinPriceChange}
+            label="Min Price"
+            autoFocus
+          />
+          <TextField
+            type="number"
+            id="maxPrice"
+            name="maxPrice"
+            margin="normal"
+            fullWidth
+            value={maxPrice}
+            onChange={handleMaxPriceChange}
+            label="Max Price"
+            autoFocus
+          />
+
+          <TextField
+            type="text"
+            id="searchQuery"
+            name="searchQuery"
+            value={searchQuery}
+            onChange={handleSearchQueryChange}
+            margin="normal"
+            fullWidth
+            label="Serch by name"
+            autoFocus
+          />
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
+          >
+            CREATE
+          </Button>
+        </Box>
         {session && role === 'admin' ? (
           <List>
             <Div>Admin Tools</Div>
@@ -331,7 +420,7 @@ const Home = () => {
         aria-labelledby="alert-dialog-title"
       >
         <DialogTitle id="alert-dialog-title">
-          Are you sure of deleting this product?
+          Are you sure of deleting this?
         </DialogTitle>
         <DialogActions>
           <Button color="primary" onClick={handleClickCloseDialog}>

@@ -44,13 +44,7 @@ const Login = () => {
           }
         });
     } catch (error) {
-      // if (error.response.status === 400) {
-      //   setAlert('Fill all the fields');
-      // }
-      // else {
       setAlert(error.response.data.message);
-      console.log(error.response.data.message);
-      // }
     }
     return null;
   };
@@ -115,7 +109,7 @@ const Login = () => {
               </Grid>
               <Grid item xs={12}>
                 <Link href="/" variant="body2">
-                  Go back to home
+                  Go back to home without session
                 </Link>
               </Grid>
               <Grid item xs={12}>

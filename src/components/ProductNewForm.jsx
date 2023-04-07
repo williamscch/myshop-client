@@ -38,9 +38,6 @@ const Login = () => {
       .get(CAT_URL)
       .then((response) => {
         setCats(response.data);
-      })
-      .catch((error) => {
-        console.log(error);
       });
   }, []);
 
