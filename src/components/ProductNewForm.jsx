@@ -69,7 +69,7 @@ const Login = () => {
         })
         .then((response) => {
           if (response.status === 201) {
-            setSuccess('Category was created succesfully');
+            setSuccess('Product was created successfully');
             setTimeout(() => {
               navigate('/');
             }, 3000);

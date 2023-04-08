@@ -26,15 +26,14 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogTitle from '@mui/material/DialogTitle';
 import TextField from '@mui/material/TextField';
 import axios from '../services/axios';
-import decodeJWT from '../services/decodeJWT';
 import NavBar from './NavBar';
+import decodeJWT from '../services/decodeJWT';
 
-const CAT_URL = '/categories';
 const CUSTOMERS_URL = '/customers/';
+const CAT_URL = '/categories';
 const PRODUCTS_URL = '/products';
-const token = window.localStorage.getItem('token');
-
 const drawerWidth = 240;
+const token = window.localStorage.getItem('token');
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
   ({ theme, open }) => ({
@@ -58,24 +57,23 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
 const Home = () => {
   const [products, setProducts] = React.useState(null);
   const [open, setOpen] = React.useState(false);
-  const [session, setSession] = React.useState(false);
-  const [role, setRole] = React.useState();
-  // const [userId, setUserId] = React.useState();
-  const theme = useTheme();
   const [cats, setCats] = React.useState(null);
-  const [customer, setCustomer] = React.useState(null);
   const [openDialog, setOpenDialog] = React.useState(false);
   const [itemToDelete, setItemToDelete] = React.useState(false);
   const [categoryId, setCategoryId] = React.useState(null);
-  const [minPrice, setMinPrice] = React.useState('');
   const [maxPrice, setMaxPrice] = React.useState('');
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [session, setSession] = React.useState(false);
+  const [role, setRole] = React.useState(null);
+  const [customer, setCustomer] = React.useState(null);
+  const [idOrder, setOrderId] = React.useState();
+
+  const theme = useTheme();
 
   const DrawerHeader = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     padding: theme.spacing(0, 1),
-    // necessary for content to be below app bar
     ...theme.mixins.toolbar,
     justifyContent: 'flex-end',
   }));
@@ -88,12 +86,8 @@ const Home = () => {
 
   React.useEffect(() => {
     const filters = {};
-
     if (categoryId !== null) {
       filters.categoryId = categoryId;
-    }
-    if (minPrice !== '') {
-      filters.price_min = minPrice;
     }
     if (maxPrice !== '') {
       filters.price_max = maxPrice;
@@ -109,29 +103,10 @@ const Home = () => {
 
     const url = queryString ? `${PRODUCTS_URL}?${queryString}` : PRODUCTS_URL;
 
-    axios
-      .get(url)
-      .then((response) => {
-        setProducts(response.data);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  }, [categoryId, minPrice, maxPrice, searchQuery]);
-
-  React.useEffect(() => {
-    if (localStorage.getItem('token') !== null) {
-      setSession(true);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    if (session === true || window.localStorage.getItem('token') != null) {
-      const decode = decodeJWT(window.localStorage.getItem('token'));
-      setRole(decode.role);
-      // setUserId(decode.sub);
-    }
-  }, []);
+    axios.get(url).then((response) => {
+      setProducts(response.data);
+    });
+  }, [categoryId, maxPrice, searchQuery]);
 
   React.useEffect(() => {
     axios.get(CAT_URL).then((response) => {
@@ -140,24 +115,64 @@ const Home = () => {
   }, []);
 
   React.useEffect(() => {
-    if (session && role === 'customer') {
-      const userId = decodeJWT(window.localStorage.getItem('token')).sub;
-      axios
-        .get(CUSTOMERS_URL + userId)
-        .then((response) => {
-          setCustomer(response.data);
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    }
-  }, []);
+    if (token !== null) {
+      setSession(true);
+      setRole(decodeJWT(token).role);
 
-  React.useEffect(() => {
-    axios.get(PRODUCTS_URL).then((response) => {
-      setProducts(response.data);
-    });
-  }, []);
+      if (role === 'customer') {
+        axios
+          .get(CUSTOMERS_URL + decodeJWT(token).sub, {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          })
+          .then((response) => {
+            setCustomer(response.data);
+          });
+
+        axios
+          .get('profile/my-orders', {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          })
+          .then((response) => {
+            if (response.data.length >= 1) {
+              setOrderId(response.data[0].id);
+            } else {
+              axios
+                .post('/orders', JSON.stringify({ customerId: customer.id }), {
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                  },
+                })
+                .then((response) => setOrderId(response.id));
+            }
+          });
+      }
+    }
+  }, [session, role]);
+
+  const handleAddItemToCar = (p, a) => {
+    console.log(idOrder);
+    axios.post(
+      '/orders/add-item',
+      JSON.stringify({
+        orderId: idOrder,
+        productId: p,
+        amount: a,
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    ).then((response) => console.log(response));
+  };
 
   const handleClickOpenDialog = (id) => {
     setOpenDialog(true);
@@ -186,12 +201,6 @@ const Home = () => {
       });
   };
 
-  const handleSetAllCat = () => {
-    axios.get(PRODUCTS_URL).then((response) => {
-      setProducts(response.data);
-    });
-  };
-
   const handleDrawerOpen = () => {
     setOpen(true);
   };
@@ -202,10 +211,6 @@ const Home = () => {
 
   function handleCategoryChange(id) {
     setCategoryId(id);
-  }
-
-  function handleMinPriceChange(event) {
-    setMinPrice(event.target.value);
   }
 
   function handleMaxPriceChange(event) {
@@ -220,6 +225,7 @@ const Home = () => {
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
       <NavBar
+        role={role}
         session={session}
         setSession={setSession}
         position="fixed"
@@ -274,7 +280,7 @@ const Home = () => {
         <Divider />
         <List>
           <ListItem disablePadding>
-            <ListItemButton onClick={handleSetAllCat}>
+            <ListItemButton onClick={() => handleCategoryChange(null)}>
               <ListItemText primary="All Products" />
             </ListItemButton>
           </ListItem>
@@ -289,17 +295,6 @@ const Home = () => {
             : ''}
         </List>
         <Box component="form" noValidate sx={{ mt: 1 }}>
-          <TextField
-            type="number"
-            id="minPrice"
-            name="minPrice"
-            margin="normal"
-            fullWidth
-            value={minPrice}
-            onChange={handleMinPriceChange}
-            label="Min Price"
-            autoFocus
-          />
           <TextField
             type="number"
             id="maxPrice"
@@ -323,28 +318,19 @@ const Home = () => {
             label="Serch by name"
             autoFocus
           />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-          >
-            CREATE
-          </Button>
         </Box>
         {session && role === 'admin' ? (
           <List>
             <Div>Admin Tools</Div>
-
             <ListItem disablePadding>
-              <ListItemButton onClick={handleSetAllCat}>
+              <ListItemButton>
                 <Link to="/new-category">
                   <ListItemText primary="New Category" />
                 </Link>
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton onClick={handleSetAllCat}>
+              <ListItemButton>
                 <Link to="/new-product">
                   <ListItemText primary="New Product" />
                 </Link>
@@ -395,7 +381,11 @@ const Home = () => {
                         </IconButton>
                       </>
                     ) : (
-                      <Button size="small" color="primary">
+                      <Button
+                        size="small"
+                        color="primary"
+                        onClick={() => handleAddItemToCar(item.id, 1)}
+                      >
                         Add to car
                       </Button>
                     )}

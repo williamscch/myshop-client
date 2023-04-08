@@ -13,10 +13,16 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogTitle from '@mui/material/DialogTitle';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 
 const NavBar = ({
-  open, handleDrawerOpen, drawerWidth, session, setSession,
+  open,
+  handleDrawerOpen,
+  drawerWidth,
+  session,
+  setSession, role,
 }) => {
   const [openDialog, setOpenDialog] = React.useState(false);
   const navigate = useNavigate();
@@ -80,12 +86,26 @@ const NavBar = ({
           >
             <Link to="/login">
               {' '}
-              <Button>LOGIN</Button>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={handleClickOpenDialog}
+                startIcon={<VpnKeyIcon />}
+              >
+                LOG IN
+              </Button>
             </Link>
 
             <Link to="/signup">
               {' '}
-              <Button>SIGNUP</Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={handleClickOpenDialog}
+                startIcon={<PersonAddIcon />}
+              >
+                SIGN UP
+              </Button>
             </Link>
           </ButtonGroup>
         ) : (
@@ -96,14 +116,21 @@ const NavBar = ({
             variant="contained"
             color="secondary"
           >
-            <Button
-              variant="contained"
-              color="warning"
-              onClick={handleClickOpenDialog}
-              startIcon={<AccountCircleIcon />}
-            >
-              Logout
-            </Button>
+            {
+              role === 'customer'
+                ? (
+                  <Link to="/shop-car">
+                    <Button
+                      startIcon={<ShoppingCartIcon />}
+                      variant="contained"
+                      color="secondary"
+                    >
+                      Shop Car
+                    </Button>
+                  </Link>
+                ) : ''
+            }
+
             <Dialog
               open={openDialog}
               onClose={handleClickCloseDialog}
@@ -129,11 +156,12 @@ const NavBar = ({
               </DialogActions>
             </Dialog>
             <Button
-              startIcon={<ExitToAppIcon />}
               variant="contained"
-              color="secondary"
+              color="warning"
+              onClick={handleClickOpenDialog}
+              startIcon={<ExitToAppIcon />}
             >
-              My Profile
+              Logout
             </Button>
           </ButtonGroup>
         )}
@@ -144,10 +172,11 @@ const NavBar = ({
 
 NavBar.propTypes = {
   open: PropTypes.bool.isRequired,
-  session: PropTypes.bool.isRequired,
-  setSession: PropTypes.func.isRequired,
   handleDrawerOpen: PropTypes.func.isRequired,
   drawerWidth: PropTypes.number.isRequired,
+  setSession: PropTypes.func.isRequired,
+  session: PropTypes.bool.isRequired,
+  role: PropTypes.string.isRequired,
 };
 
 export default NavBar;
