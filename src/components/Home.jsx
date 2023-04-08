@@ -33,7 +33,6 @@ const CUSTOMERS_URL = '/customers/';
 const CAT_URL = '/categories';
 const PRODUCTS_URL = '/products';
 const drawerWidth = 240;
-const token = window.localStorage.getItem('token');
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
   ({ theme, open }) => ({
@@ -64,9 +63,12 @@ const Home = () => {
   const [maxPrice, setMaxPrice] = React.useState('');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [session, setSession] = React.useState(false);
-  const [role, setRole] = React.useState(null);
+  const [role, setRole] = React.useState('');
   const [customer, setCustomer] = React.useState(null);
   const [idOrder, setOrderId] = React.useState();
+  const [token, setToken] = React.useState(
+    window.localStorage.getItem('token'),
+  );
 
   const theme = useTheme();
 
@@ -85,6 +87,7 @@ const Home = () => {
   }));
 
   React.useEffect(() => {
+    setToken(window.localStorage.getItem('token'));
     const filters = {};
     if (categoryId !== null) {
       filters.categoryId = categoryId;
@@ -154,24 +157,26 @@ const Home = () => {
           });
       }
     }
-  }, [session, role]);
+  }, [session, role, token, customer]);
 
   const handleAddItemToCar = (p, a) => {
     console.log(idOrder);
-    axios.post(
-      '/orders/add-item',
-      JSON.stringify({
-        orderId: idOrder,
-        productId: p,
-        amount: a,
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+    axios
+      .post(
+        '/orders/add-item',
+        JSON.stringify({
+          orderId: idOrder,
+          productId: p,
+          amount: a,
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
         },
-      },
-    ).then((response) => console.log(response));
+      )
+      .then((response) => console.log(response));
   };
 
   const handleClickOpenDialog = (id) => {

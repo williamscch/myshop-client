@@ -38,7 +38,7 @@ const ShopCar = () => {
         })
         .catch((e) => console.log(e));
     }
-  }, [token]);
+  }, [token, orders]);
 
   const TAX_RATE = 0.07;
 
