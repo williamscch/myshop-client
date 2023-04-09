@@ -79,6 +79,8 @@ const Home = () => {
   );
   const [showConfirmationDialog, setShowConfirmationDialog] = React.useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = React.useState(false);
+  const [successMessage, setSuccessMessage] = React.useState(false);
+  const [selectedProduct, setSelectedProduct] = React.useState({ id: '', name: '', price: '' });
 
   const theme = useTheme();
 
@@ -116,9 +118,12 @@ const Home = () => {
 
     const url = queryString ? `${PRODUCTS_URL}?${queryString}` : PRODUCTS_URL;
 
-    axios.get(url).then((response) => {
-      setProducts(response.data);
-    });
+    axios
+      .get(url)
+      .then((response) => {
+        setProducts(response.data);
+      })
+      .then(() => console.log(products));
   }, [categoryId, maxPrice, searchQuery]);
 
   React.useEffect(() => {
@@ -216,7 +221,8 @@ const Home = () => {
     setSearchQuery(event.target.value);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (product) => {
+    setSelectedProduct(product);
     setShowConfirmationDialog(true);
   };
 
@@ -224,14 +230,14 @@ const Home = () => {
     setShowConfirmationDialog(false);
 
     if (confirmed) {
-      // Lógica para agregar el producto al carrito aquí
+      // Logic to add products to car
       setShowSuccessMessage(true);
       axios
         .post(
           '/orders/add-item',
           JSON.stringify({
             orderId: idOrder,
-            productId: p,
+            productId: p.id,
             amount: 1,
           }),
           {
@@ -241,7 +247,13 @@ const Home = () => {
             },
           },
         )
-        .then((response) => console.log(response));
+        .then((response) => {
+          setSuccessMessage(`${p.name} was added to your cart!`);
+          console.log(response);
+        })
+        .catch((err) => {
+          setSuccessMessage(`${err.response.data}, You need to be logged`);
+        });
     }
   };
 
@@ -410,10 +422,13 @@ const Home = () => {
                       </>
                     ) : (
                       <>
+                        <Typography variant="body2" color="text.secondary">
+                          {item.id}
+                        </Typography>
                         <Button
                           size="small"
                           color="primary"
-                          onClick={handleAddToCart}
+                          onClick={() => handleAddToCart(item)}
                           startIcon={<AddShoppingCartIcon />}
                         >
                           Add to car
@@ -427,11 +442,11 @@ const Home = () => {
                             car?
                           </DialogTitle>
                           <DialogContent>
-                            <p>{item.name}</p>
+                            <p>{selectedProduct.name}</p>
                             <p>
                               Price:
                               {' '}
-                              {item.price}
+                              {selectedProduct.price}
                               $
                             </p>
                           </DialogContent>
@@ -442,7 +457,10 @@ const Home = () => {
                               Cancel
                             </Button>
                             <Button
-                              onClick={() => handleConfirmationDialogClose(true, item.id)}
+                              onClick={() => handleConfirmationDialogClose(
+                                true,
+                                selectedProduct,
+                              )}
                             >
                               Yes, add it!
                             </Button>
@@ -453,7 +471,7 @@ const Home = () => {
                           open={showSuccessMessage}
                           autoHideDuration={3000}
                           onClose={handleSuccessMessageClose}
-                          message="Product Added Successfully"
+                          message={successMessage}
                         />
                       </>
                     )}
