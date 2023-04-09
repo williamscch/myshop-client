@@ -157,7 +157,7 @@ const Home = () => {
           });
       }
     }
-  }, [session, role, token, customer]);
+  }, [session, role, token]);
 
   const handleAddItemToCar = (p, a) => {
     console.log(idOrder);
