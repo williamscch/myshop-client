@@ -24,7 +24,7 @@ This is the server-side repo, it is a MUST to run this project.
 
 ## Screenshots
 
-![App Screenshot](./app-ss)
+![App Screenshot](./app-ss.png)
 
 
 ## Demo
