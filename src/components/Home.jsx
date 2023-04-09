@@ -1,30 +1,38 @@
 /* eslint-disable react/jsx-no-bind */
-import * as React from 'react';
-import { styled, useTheme } from '@mui/material/styles';
-import Box from '@mui/material/Box';
-import CssBaseline from '@mui/material/CssBaseline';
-import Drawer from '@mui/material/Drawer';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemText from '@mui/material/ListItemText';
-import List from '@mui/material/List';
-import Typography from '@mui/material/Typography';
-import Card from '@mui/material/Card';
-import Grid from '@mui/material/Grid';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import { Button, CardActionArea, CardActions } from '@mui/material';
+import React from 'react';
 import { Link } from 'react-router-dom';
+import {
+  CardActionArea,
+  CardActions,
+  CardMedia,
+  CardContent,
+  Grid,
+  Card,
+  Button,
+  IconButton,
+  Divider,
+  Drawer,
+  CssBaseline,
+  Box,
+  styled,
+  useTheme,
+  Dialog,
+  Typography,
+  List,
+  ListItemButton,
+  ListItemText,
+  ListItem,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Snackbar,
+  TextField,
+} from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import DeleteIcon from '@mui/icons-material/Delete';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogTitle from '@mui/material/DialogTitle';
-import TextField from '@mui/material/TextField';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import axios from '../services/axios';
 import NavBar from './NavBar';
 import decodeJWT from '../services/decodeJWT';
@@ -69,6 +77,8 @@ const Home = () => {
   const [token, setToken] = React.useState(
     window.localStorage.getItem('token'),
   );
+  const [showConfirmationDialog, setShowConfirmationDialog] = React.useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = React.useState(false);
 
   const theme = useTheme();
 
@@ -159,26 +169,6 @@ const Home = () => {
     }
   }, [session, role, token]);
 
-  const handleAddItemToCar = (p, a) => {
-    console.log(idOrder);
-    axios
-      .post(
-        '/orders/add-item',
-        JSON.stringify({
-          orderId: idOrder,
-          productId: p,
-          amount: a,
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      )
-      .then((response) => console.log(response));
-  };
-
   const handleClickOpenDialog = (id) => {
     setOpenDialog(true);
     setItemToDelete(id);
@@ -214,17 +204,50 @@ const Home = () => {
     setOpen(false);
   };
 
-  function handleCategoryChange(id) {
+  const handleCategoryChange = (id) => {
     setCategoryId(id);
-  }
+  };
 
-  function handleMaxPriceChange(event) {
+  const handleMaxPriceChange = (event) => {
     setMaxPrice(event.target.value);
-  }
+  };
 
-  function handleSearchQueryChange(event) {
+  const handleSearchQueryChange = (event) => {
     setSearchQuery(event.target.value);
-  }
+  };
+
+  const handleAddToCart = () => {
+    setShowConfirmationDialog(true);
+  };
+
+  const handleConfirmationDialogClose = (confirmed, p) => {
+    setShowConfirmationDialog(false);
+
+    if (confirmed) {
+      // Lógica para agregar el producto al carrito aquí
+      setShowSuccessMessage(true);
+      axios
+        .post(
+          '/orders/add-item',
+          JSON.stringify({
+            orderId: idOrder,
+            productId: p,
+            amount: 1,
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        )
+        .then((response) => console.log(response));
+    }
+  };
+
+  const handleSuccessMessageClose = () => {
+    setShowSuccessMessage(false);
+  };
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -381,18 +404,58 @@ const Home = () => {
                         >
                           <DeleteIcon />
                         </IconButton>
-                        <IconButton aria-label="delete">
+                        <IconButton aria-label="edit">
                           <EditIcon />
                         </IconButton>
                       </>
                     ) : (
-                      <Button
-                        size="small"
-                        color="primary"
-                        onClick={() => handleAddItemToCar(item.id, 1)}
-                      >
-                        Add to car
-                      </Button>
+                      <>
+                        <Button
+                          size="small"
+                          color="primary"
+                          onClick={handleAddToCart}
+                          startIcon={<AddShoppingCartIcon />}
+                        >
+                          Add to car
+                        </Button>
+                        <Dialog
+                          open={showConfirmationDialog}
+                          onClose={() => handleConfirmationDialogClose(false)}
+                        >
+                          <DialogTitle>
+                            Are you sure about adding this product to your
+                            car?
+                          </DialogTitle>
+                          <DialogContent>
+                            <p>{item.name}</p>
+                            <p>
+                              Price:
+                              {' '}
+                              {item.price}
+                              $
+                            </p>
+                          </DialogContent>
+                          <DialogActions>
+                            <Button
+                              onClick={() => handleConfirmationDialogClose(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={() => handleConfirmationDialogClose(true, item.id)}
+                            >
+                              Yes, add it!
+                            </Button>
+                          </DialogActions>
+                        </Dialog>
+                        <Snackbar
+                          severity="success"
+                          open={showSuccessMessage}
+                          autoHideDuration={3000}
+                          onClose={handleSuccessMessageClose}
+                          message="Product Added Successfully"
+                        />
+                      </>
                     )}
                   </CardActions>
                 </Card>

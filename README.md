@@ -22,7 +22,7 @@ This is the server-side repo, it is a MUST to run this project.
 **Server:** Node, Express, Postgres, Sequelize
 
 
-## Screenshots
+## Interface Preview
 
 ![App Screenshot](./app-ss.png)
 
