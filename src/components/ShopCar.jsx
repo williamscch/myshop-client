@@ -32,9 +32,9 @@ const ShopCar = () => {
           },
         })
         .then((response) => {
-          console.log(response);
+          // console.log(response);
           setOrders(response.data.items);
-          console.log(orders);
+          // console.log(orders);
         })
         .catch((e) => console.log(e));
     }
@@ -54,6 +54,10 @@ const ShopCar = () => {
   const invoiceSubtotal = subtotal(orders);
   const invoiceTaxes = TAX_RATE * invoiceSubtotal;
   const invoiceTotal = invoiceTaxes + invoiceSubtotal;
+
+  React.useEffect(() => {
+    console.log(orders);
+  }, []);
 
   return (
     <Box>
